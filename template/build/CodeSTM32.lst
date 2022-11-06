@@ -1,0 +1,1456 @@
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 1
+
+
+   1              		.cpu cortex-m4
+   2              		.arch armv7e-m
+   3              		.fpu fpv4-sp-d16
+   4              		.eabi_attribute 27, 1
+   5              		.eabi_attribute 28, 1
+   6              		.eabi_attribute 20, 1
+   7              		.eabi_attribute 21, 1
+   8              		.eabi_attribute 23, 3
+   9              		.eabi_attribute 24, 1
+  10              		.eabi_attribute 25, 1
+  11              		.eabi_attribute 26, 1
+  12              		.eabi_attribute 30, 6
+  13              		.eabi_attribute 34, 1
+  14              		.eabi_attribute 18, 4
+  15              		.file	"CodeSTM32.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.global	rxbuff
+  20              		.section	.bss.rxbuff,"aw",%nobits
+  21              		.align	2
+  24              	rxbuff:
+  25 0000 00       		.space	1
+  26              		.global	txbuff
+  27              		.section	.bss.txbuff,"aw",%nobits
+  28              		.align	2
+  31              	txbuff:
+  32 0000 00       		.space	1
+  33              		.global	input_capture
+  34              		.section	.bss.input_capture,"aw",%nobits
+  35              		.align	2
+  38              	input_capture:
+  39 0000 00000000 		.space	4
+  40              		.global	pre_capture
+  41              		.section	.bss.pre_capture,"aw",%nobits
+  42              		.align	2
+  45              	pre_capture:
+  46 0000 00000000 		.space	4
+  47              		.global	captureOnthefly
+  48              		.section	.bss.captureOnthefly,"aw",%nobits
+  49              		.align	2
+  52              	captureOnthefly:
+  53 0000 00000000 		.space	4
+  54              		.global	pulse_perSecond
+  55              		.section	.bss.pulse_perSecond,"aw",%nobits
+  56              		.align	2
+  59              	pulse_perSecond:
+  60 0000 00000000 		.space	4
+  61              		.global	time
+  62              		.section	.bss.time,"aw",%nobits
+  63              		.align	2
+  66              	time:
+  67 0000 00000000 		.space	4
+  68              		.global	speed
+  69              		.section	.bss.speed,"aw",%nobits
+  70              		.align	2
+  73              	speed:
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 2
+
+
+  74 0000 00000000 		.space	4
+  75              		.global	run
+  76              		.section	.bss.run,"aw",%nobits
+  77              		.align	2
+  80              	run:
+  81 0000 00000000 		.space	4
+  82              		.global	GPIO_InitStruct
+  83              		.section	.bss.GPIO_InitStruct,"aw",%nobits
+  84              		.align	2
+  87              	GPIO_InitStruct:
+  88 0000 00000000 		.space	8
+  88      00000000 
+  89              		.global	NVIC_InitStructure
+  90              		.section	.bss.NVIC_InitStructure,"aw",%nobits
+  91              		.align	2
+  94              	NVIC_InitStructure:
+  95 0000 00000000 		.space	4
+  96              		.global	TIM_TimeBaseInitStructre
+  97              		.section	.bss.TIM_TimeBaseInitStructre,"aw",%nobits
+  98              		.align	2
+ 101              	TIM_TimeBaseInitStructre:
+ 102 0000 00000000 		.space	12
+ 102      00000000 
+ 102      00000000 
+ 103              		.global	TimerIC_Confi
+ 104              		.section	.bss.TimerIC_Confi,"aw",%nobits
+ 105              		.align	2
+ 108              	TimerIC_Confi:
+ 109 0000 00000000 		.space	10
+ 109      00000000 
+ 109      0000
+ 110              		.global	USART_InitStructure
+ 111              		.section	.bss.USART_InitStructure,"aw",%nobits
+ 112              		.align	2
+ 115              	USART_InitStructure:
+ 116 0000 00000000 		.space	16
+ 116      00000000 
+ 116      00000000 
+ 116      00000000 
+ 117              		.global	DMA_InitStructure
+ 118              		.section	.bss.DMA_InitStructure,"aw",%nobits
+ 119              		.align	2
+ 122              	DMA_InitStructure:
+ 123 0000 00000000 		.space	60
+ 123      00000000 
+ 123      00000000 
+ 123      00000000 
+ 123      00000000 
+ 124              		.section	.text.main,"ax",%progbits
+ 125              		.align	1
+ 126              		.global	main
+ 127              		.syntax unified
+ 128              		.thumb
+ 129              		.thumb_func
+ 131              	main:
+ 132              	.LFB133:
+ 133              		.file 1 "Src/CodeSTM32.c"
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 3
+
+
+   1:Src/CodeSTM32.c **** #include "stm32f4xx.h"
+   2:Src/CodeSTM32.c **** #include "stdio.h"
+   3:Src/CodeSTM32.c **** 
+   4:Src/CodeSTM32.c **** #define BUFFER_SIZE_RX 1
+   5:Src/CodeSTM32.c **** #define BUFFER_SIZE_TX 1
+   6:Src/CodeSTM32.c **** 
+   7:Src/CodeSTM32.c **** int8_t rxbuff[BUFFER_SIZE_RX];
+   8:Src/CodeSTM32.c **** char txbuff[BUFFER_SIZE_TX];
+   9:Src/CodeSTM32.c **** 
+  10:Src/CodeSTM32.c **** /* ENCODER */
+  11:Src/CodeSTM32.c **** float input_capture, pre_capture, captureOnthefly = 0 ;
+  12:Src/CodeSTM32.c **** float pulse_perSecond, time ;
+  13:Src/CodeSTM32.c **** float speed;
+  14:Src/CodeSTM32.c **** int run = 0;
+  15:Src/CodeSTM32.c **** 
+  16:Src/CodeSTM32.c **** ///// TypeDef /////
+  17:Src/CodeSTM32.c **** GPIO_InitTypeDef 			GPIO_InitStruct;
+  18:Src/CodeSTM32.c **** NVIC_InitTypeDef 			NVIC_InitStructure;
+  19:Src/CodeSTM32.c **** TIM_TimeBaseInitTypeDef 	TIM_TimeBaseInitStructre;
+  20:Src/CodeSTM32.c **** TIM_ICInitTypeDef			TimerIC_Confi;
+  21:Src/CodeSTM32.c **** USART_InitTypeDef			USART_InitStructure;
+  22:Src/CodeSTM32.c **** DMA_InitTypeDef  			DMA_InitStructure;
+  23:Src/CodeSTM32.c **** 
+  24:Src/CodeSTM32.c **** ///// Void /////
+  25:Src/CodeSTM32.c **** void TimerCaptureConf(void);
+  26:Src/CodeSTM32.c **** void USART_Config(void);
+  27:Src/CodeSTM32.c **** void readEncoder(void);
+  28:Src/CodeSTM32.c **** void PCTransmission(void);
+  29:Src/CodeSTM32.c **** void TIMCounterConfig(void);
+  30:Src/CodeSTM32.c **** void delay( __IO uint32_t nCount);
+  31:Src/CodeSTM32.c **** 
+  32:Src/CodeSTM32.c **** int main(){
+ 134              		.loc 1 32 11
+ 135              		.cfi_startproc
+ 136              		@ args = 0, pretend = 0, frame = 0
+ 137              		@ frame_needed = 1, uses_anonymous_args = 0
+ 138 0000 80B5     		push	{r7, lr}
+ 139              	.LCFI0:
+ 140              		.cfi_def_cfa_offset 8
+ 141              		.cfi_offset 7, -8
+ 142              		.cfi_offset 14, -4
+ 143 0002 00AF     		add	r7, sp, #0
+ 144              	.LCFI1:
+ 145              		.cfi_def_cfa_register 7
+  33:Src/CodeSTM32.c **** 	SystemInit();
+ 146              		.loc 1 33 2
+ 147 0004 FFF7FEFF 		bl	SystemInit
+  34:Src/CodeSTM32.c ****  	TimerCaptureConf();
+ 148              		.loc 1 34 3
+ 149 0008 FFF7FEFF 		bl	TimerCaptureConf
+  35:Src/CodeSTM32.c ****  	USART_Config();
+ 150              		.loc 1 35 3
+ 151 000c FFF7FEFF 		bl	USART_Config
+  36:Src/CodeSTM32.c **** 	TIMCounterConfig();
+ 152              		.loc 1 36 2
+ 153 0010 FFF7FEFF 		bl	TIMCounterConfig
+ 154              	.L2:
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 4
+
+
+  37:Src/CodeSTM32.c **** 	
+  38:Src/CodeSTM32.c **** 	while(1){
+  39:Src/CodeSTM32.c **** 		GPIO_SetBits(GPIOD, GPIO_Pin_12);
+ 155              		.loc 1 39 3 discriminator 1
+ 156 0014 4FF48051 		mov	r1, #4096
+ 157 0018 0148     		ldr	r0, .L3
+ 158 001a FFF7FEFF 		bl	GPIO_SetBits
+ 159 001e F9E7     		b	.L2
+ 160              	.L4:
+ 161              		.align	2
+ 162              	.L3:
+ 163 0020 000C0240 		.word	1073875968
+ 164              		.cfi_endproc
+ 165              	.LFE133:
+ 167              		.section	.text.TIMCounterConfig,"ax",%progbits
+ 168              		.align	1
+ 169              		.global	TIMCounterConfig
+ 170              		.syntax unified
+ 171              		.thumb
+ 172              		.thumb_func
+ 174              	TIMCounterConfig:
+ 175              	.LFB134:
+  40:Src/CodeSTM32.c **** 		// readEncoder();	
+  41:Src/CodeSTM32.c **** 		// if (run == 1){
+  42:Src/CodeSTM32.c **** 		// 	PCTransmission();	
+  43:Src/CodeSTM32.c **** 		// }
+  44:Src/CodeSTM32.c **** 		// else{
+  45:Src/CodeSTM32.c **** 		// 	GPIO_ResetBits(GPIOD, GPIO_Pin_12|GPIO_Pin_13|GPIO_Pin_14|GPIO_Pin_15);
+  46:Src/CodeSTM32.c **** 		// }
+  47:Src/CodeSTM32.c **** 	}
+  48:Src/CodeSTM32.c **** }
+  49:Src/CodeSTM32.c **** 
+  50:Src/CodeSTM32.c **** void TIMCounterConfig(void){
+ 176              		.loc 1 50 28
+ 177              		.cfi_startproc
+ 178              		@ args = 0, pretend = 0, frame = 0
+ 179              		@ frame_needed = 1, uses_anonymous_args = 0
+ 180 0000 80B5     		push	{r7, lr}
+ 181              	.LCFI2:
+ 182              		.cfi_def_cfa_offset 8
+ 183              		.cfi_offset 7, -8
+ 184              		.cfi_offset 14, -4
+ 185 0002 00AF     		add	r7, sp, #0
+ 186              	.LCFI3:
+ 187              		.cfi_def_cfa_register 7
+  51:Src/CodeSTM32.c **** 	RCC_APB1PeriphClockCmd (RCC_APB1Periph_TIM6, ENABLE);
+ 188              		.loc 1 51 2
+ 189 0004 0121     		movs	r1, #1
+ 190 0006 1020     		movs	r0, #16
+ 191 0008 FFF7FEFF 		bl	RCC_APB1PeriphClockCmd
+  52:Src/CodeSTM32.c **** 
+  53:Src/CodeSTM32.c **** 	TIM_TimeBaseInitStructre.TIM_ClockDivision = 0;
+ 192              		.loc 1 53 45
+ 193 000c 0B4B     		ldr	r3, .L6
+ 194 000e 0022     		movs	r2, #0
+ 195 0010 1A81     		strh	r2, [r3, #8]	@ movhi
+  54:Src/CodeSTM32.c ****   	TIM_TimeBaseInitStructre.TIM_Period = 0xFFFF;
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 5
+
+
+ 196              		.loc 1 54 40
+ 197 0012 0A4B     		ldr	r3, .L6
+ 198 0014 4FF6FF72 		movw	r2, #65535
+ 199 0018 5A60     		str	r2, [r3, #4]
+  55:Src/CodeSTM32.c ****   	TIM_TimeBaseInitStructre.TIM_Prescaler = 8400 - 1;
+ 200              		.loc 1 55 43
+ 201 001a 084B     		ldr	r3, .L6
+ 202 001c 42F2CF02 		movw	r2, #8399
+ 203 0020 1A80     		strh	r2, [r3]	@ movhi
+  56:Src/CodeSTM32.c **** 
+  57:Src/CodeSTM32.c ****   	TIM_TimeBaseInit (TIM6, & TIM_TimeBaseInitStructre);
+ 204              		.loc 1 57 4
+ 205 0022 0649     		ldr	r1, .L6
+ 206 0024 0648     		ldr	r0, .L6+4
+ 207 0026 FFF7FEFF 		bl	TIM_TimeBaseInit
+  58:Src/CodeSTM32.c ****   	TIM_Cmd(TIM6, ENABLE);
+ 208              		.loc 1 58 4
+ 209 002a 0121     		movs	r1, #1
+ 210 002c 0448     		ldr	r0, .L6+4
+ 211 002e FFF7FEFF 		bl	TIM_Cmd
+  59:Src/CodeSTM32.c **** 
+  60:Src/CodeSTM32.c ****   	TIM6->CNT = 0;
+ 212              		.loc 1 60 8
+ 213 0032 034B     		ldr	r3, .L6+4
+ 214              		.loc 1 60 14
+ 215 0034 0022     		movs	r2, #0
+ 216 0036 5A62     		str	r2, [r3, #36]
+  61:Src/CodeSTM32.c **** }
+ 217              		.loc 1 61 1
+ 218 0038 00BF     		nop
+ 219 003a 80BD     		pop	{r7, pc}
+ 220              	.L7:
+ 221              		.align	2
+ 222              	.L6:
+ 223 003c 00000000 		.word	TIM_TimeBaseInitStructre
+ 224 0040 00100040 		.word	1073745920
+ 225              		.cfi_endproc
+ 226              	.LFE134:
+ 228              		.section	.text.TimerCaptureConf,"ax",%progbits
+ 229              		.align	1
+ 230              		.global	TimerCaptureConf
+ 231              		.syntax unified
+ 232              		.thumb
+ 233              		.thumb_func
+ 235              	TimerCaptureConf:
+ 236              	.LFB135:
+  62:Src/CodeSTM32.c **** void TimerCaptureConf(void){
+ 237              		.loc 1 62 28
+ 238              		.cfi_startproc
+ 239              		@ args = 0, pretend = 0, frame = 0
+ 240              		@ frame_needed = 1, uses_anonymous_args = 0
+ 241 0000 80B5     		push	{r7, lr}
+ 242              	.LCFI4:
+ 243              		.cfi_def_cfa_offset 8
+ 244              		.cfi_offset 7, -8
+ 245              		.cfi_offset 14, -4
+ 246 0002 00AF     		add	r7, sp, #0
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 6
+
+
+ 247              	.LCFI5:
+ 248              		.cfi_def_cfa_register 7
+  63:Src/CodeSTM32.c **** 
+  64:Src/CodeSTM32.c **** 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
+ 249              		.loc 1 64 2
+ 250 0004 0121     		movs	r1, #1
+ 251 0006 0820     		movs	r0, #8
+ 252 0008 FFF7FEFF 		bl	RCC_AHB1PeriphClockCmd
+  65:Src/CodeSTM32.c **** 	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_14 | GPIO_Pin_15| GPIO_Pin_13| GPIO_Pin_12; 
+ 253              		.loc 1 65 27
+ 254 000c 394B     		ldr	r3, .L9
+ 255 000e 4FF47042 		mov	r2, #61440
+ 256 0012 1A60     		str	r2, [r3]
+  66:Src/CodeSTM32.c **** 	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+ 257              		.loc 1 66 28
+ 258 0014 374B     		ldr	r3, .L9
+ 259 0016 0122     		movs	r2, #1
+ 260 0018 1A71     		strb	r2, [r3, #4]
+  67:Src/CodeSTM32.c **** 	GPIO_InitStruct.GPIO_OType = GPIO_OType_PP; 
+ 261              		.loc 1 67 29
+ 262 001a 364B     		ldr	r3, .L9
+ 263 001c 0022     		movs	r2, #0
+ 264 001e 9A71     		strb	r2, [r3, #6]
+  68:Src/CodeSTM32.c **** 	GPIO_InitStruct.GPIO_Speed = GPIO_Speed_100MHz; 
+ 265              		.loc 1 68 29
+ 266 0020 344B     		ldr	r3, .L9
+ 267 0022 0322     		movs	r2, #3
+ 268 0024 5A71     		strb	r2, [r3, #5]
+  69:Src/CodeSTM32.c **** 	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL; 
+ 269              		.loc 1 69 28
+ 270 0026 334B     		ldr	r3, .L9
+ 271 0028 0022     		movs	r2, #0
+ 272 002a DA71     		strb	r2, [r3, #7]
+  70:Src/CodeSTM32.c **** 	GPIO_Init(GPIOD, &GPIO_InitStruct); 
+ 273              		.loc 1 70 2
+ 274 002c 3149     		ldr	r1, .L9
+ 275 002e 3248     		ldr	r0, .L9+4
+ 276 0030 FFF7FEFF 		bl	GPIO_Init
+  71:Src/CodeSTM32.c **** 	
+  72:Src/CodeSTM32.c **** 	RCC_AHB1PeriphClockCmd (RCC_AHB1Periph_GPIOC, ENABLE);
+ 277              		.loc 1 72 2
+ 278 0034 0121     		movs	r1, #1
+ 279 0036 0420     		movs	r0, #4
+ 280 0038 FFF7FEFF 		bl	RCC_AHB1PeriphClockCmd
+  73:Src/CodeSTM32.c **** 	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_6;
+ 281              		.loc 1 73 27
+ 282 003c 2D4B     		ldr	r3, .L9
+ 283 003e 4022     		movs	r2, #64
+ 284 0040 1A60     		str	r2, [r3]
+  74:Src/CodeSTM32.c ****   	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF;
+ 285              		.loc 1 74 30
+ 286 0042 2C4B     		ldr	r3, .L9
+ 287 0044 0222     		movs	r2, #2
+ 288 0046 1A71     		strb	r2, [r3, #4]
+  75:Src/CodeSTM32.c ****   	GPIO_InitStruct.GPIO_Speed = GPIO_Speed_100MHz;
+ 289              		.loc 1 75 31
+ 290 0048 2A4B     		ldr	r3, .L9
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 7
+
+
+ 291 004a 0322     		movs	r2, #3
+ 292 004c 5A71     		strb	r2, [r3, #5]
+  76:Src/CodeSTM32.c ****   	GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
+ 293              		.loc 1 76 31
+ 294 004e 294B     		ldr	r3, .L9
+ 295 0050 0022     		movs	r2, #0
+ 296 0052 9A71     		strb	r2, [r3, #6]
+  77:Src/CodeSTM32.c ****   	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+ 297              		.loc 1 77 30
+ 298 0054 274B     		ldr	r3, .L9
+ 299 0056 0022     		movs	r2, #0
+ 300 0058 DA71     		strb	r2, [r3, #7]
+  78:Src/CodeSTM32.c ****   	GPIO_Init(GPIOC, &GPIO_InitStruct);
+ 301              		.loc 1 78 4
+ 302 005a 2649     		ldr	r1, .L9
+ 303 005c 2748     		ldr	r0, .L9+8
+ 304 005e FFF7FEFF 		bl	GPIO_Init
+  79:Src/CodeSTM32.c **** 
+  80:Src/CodeSTM32.c **** 	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_7;
+ 305              		.loc 1 80 27
+ 306 0062 244B     		ldr	r3, .L9
+ 307 0064 8022     		movs	r2, #128
+ 308 0066 1A60     		str	r2, [r3]
+  81:Src/CodeSTM32.c ****   	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
+ 309              		.loc 1 81 30
+ 310 0068 224B     		ldr	r3, .L9
+ 311 006a 0022     		movs	r2, #0
+ 312 006c 1A71     		strb	r2, [r3, #4]
+  82:Src/CodeSTM32.c ****   	GPIO_InitStruct.GPIO_Speed = GPIO_Speed_100MHz;
+ 313              		.loc 1 82 31
+ 314 006e 214B     		ldr	r3, .L9
+ 315 0070 0322     		movs	r2, #3
+ 316 0072 5A71     		strb	r2, [r3, #5]
+  83:Src/CodeSTM32.c ****   	GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
+ 317              		.loc 1 83 31
+ 318 0074 1F4B     		ldr	r3, .L9
+ 319 0076 0022     		movs	r2, #0
+ 320 0078 9A71     		strb	r2, [r3, #6]
+  84:Src/CodeSTM32.c ****   	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+ 321              		.loc 1 84 30
+ 322 007a 1E4B     		ldr	r3, .L9
+ 323 007c 0022     		movs	r2, #0
+ 324 007e DA71     		strb	r2, [r3, #7]
+  85:Src/CodeSTM32.c ****   	GPIO_Init(GPIOC, &GPIO_InitStruct);
+ 325              		.loc 1 85 4
+ 326 0080 1C49     		ldr	r1, .L9
+ 327 0082 1E48     		ldr	r0, .L9+8
+ 328 0084 FFF7FEFF 		bl	GPIO_Init
+  86:Src/CodeSTM32.c **** 
+  87:Src/CodeSTM32.c **** 	GPIO_PinAFConfig(GPIOC,GPIO_PinSource6, GPIO_AF_TIM3);
+ 329              		.loc 1 87 2
+ 330 0088 0222     		movs	r2, #2
+ 331 008a 0621     		movs	r1, #6
+ 332 008c 1B48     		ldr	r0, .L9+8
+ 333 008e FFF7FEFF 		bl	GPIO_PinAFConfig
+  88:Src/CodeSTM32.c **** 
+  89:Src/CodeSTM32.c **** 	// Timer Capture Configuration
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 8
+
+
+  90:Src/CodeSTM32.c ****   	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+ 334              		.loc 1 90 4
+ 335 0092 0121     		movs	r1, #1
+ 336 0094 0220     		movs	r0, #2
+ 337 0096 FFF7FEFF 		bl	RCC_APB1PeriphClockCmd
+  91:Src/CodeSTM32.c ****   	TIM_TimeBaseInitStructre.TIM_Period = 10000 - 1 ;
+ 338              		.loc 1 91 40
+ 339 009a 194B     		ldr	r3, .L9+12
+ 340 009c 42F20F72 		movw	r2, #9999
+ 341 00a0 5A60     		str	r2, [r3, #4]
+  92:Src/CodeSTM32.c ****   	TIM_TimeBaseInitStructre.TIM_Prescaler = (8400 - 1);
+ 342              		.loc 1 92 43
+ 343 00a2 174B     		ldr	r3, .L9+12
+ 344 00a4 42F2CF02 		movw	r2, #8399
+ 345 00a8 1A80     		strh	r2, [r3]	@ movhi
+  93:Src/CodeSTM32.c ****   	TIM_TimeBaseInitStructre.TIM_ClockDivision = 0;
+ 346              		.loc 1 93 47
+ 347 00aa 154B     		ldr	r3, .L9+12
+ 348 00ac 0022     		movs	r2, #0
+ 349 00ae 1A81     		strh	r2, [r3, #8]	@ movhi
+  94:Src/CodeSTM32.c ****   	TIM_TimeBaseInitStructre.TIM_CounterMode = TIM_CounterMode_Up;
+ 350              		.loc 1 94 45
+ 351 00b0 134B     		ldr	r3, .L9+12
+ 352 00b2 0022     		movs	r2, #0
+ 353 00b4 5A80     		strh	r2, [r3, #2]	@ movhi
+  95:Src/CodeSTM32.c ****   	TIM_TimeBaseInit (TIM3, &TIM_TimeBaseInitStructre);
+ 354              		.loc 1 95 4
+ 355 00b6 1249     		ldr	r1, .L9+12
+ 356 00b8 1248     		ldr	r0, .L9+16
+ 357 00ba FFF7FEFF 		bl	TIM_TimeBaseInit
+  96:Src/CodeSTM32.c **** 
+  97:Src/CodeSTM32.c ****   	TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);
+ 358              		.loc 1 97 4
+ 359 00be 0122     		movs	r2, #1
+ 360 00c0 0121     		movs	r1, #1
+ 361 00c2 1048     		ldr	r0, .L9+16
+ 362 00c4 FFF7FEFF 		bl	TIM_ITConfig
+  98:Src/CodeSTM32.c **** 
+  99:Src/CodeSTM32.c ****   	// Timer Input Capture Configuration
+ 100:Src/CodeSTM32.c ****   	TimerIC_Confi.TIM_Channel = TIM_Channel_1 ;
+ 363              		.loc 1 100 30
+ 364 00c8 0F4B     		ldr	r3, .L9+20
+ 365 00ca 0022     		movs	r2, #0
+ 366 00cc 1A80     		strh	r2, [r3]	@ movhi
+ 101:Src/CodeSTM32.c ****   	TimerIC_Confi.TIM_ICFilter = 15;
+ 367              		.loc 1 101 31
+ 368 00ce 0E4B     		ldr	r3, .L9+20
+ 369 00d0 0F22     		movs	r2, #15
+ 370 00d2 1A81     		strh	r2, [r3, #8]	@ movhi
+ 102:Src/CodeSTM32.c ****   	TimerIC_Confi.TIM_ICPolarity = TIM_ICPolarity_Rising ;
+ 371              		.loc 1 102 33
+ 372 00d4 0C4B     		ldr	r3, .L9+20
+ 373 00d6 0022     		movs	r2, #0
+ 374 00d8 5A80     		strh	r2, [r3, #2]	@ movhi
+ 103:Src/CodeSTM32.c ****   	TimerIC_Confi.TIM_ICSelection = TIM_ICSelection_DirectTI;
+ 375              		.loc 1 103 34
+ 376 00da 0B4B     		ldr	r3, .L9+20
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 9
+
+
+ 377 00dc 0122     		movs	r2, #1
+ 378 00de 9A80     		strh	r2, [r3, #4]	@ movhi
+ 104:Src/CodeSTM32.c ****   	TIM_ICInit(TIM3, &TimerIC_Confi);
+ 379              		.loc 1 104 4
+ 380 00e0 0949     		ldr	r1, .L9+20
+ 381 00e2 0848     		ldr	r0, .L9+16
+ 382 00e4 FFF7FEFF 		bl	TIM_ICInit
+ 105:Src/CodeSTM32.c ****   	TIM_Cmd(TIM3, ENABLE);
+ 383              		.loc 1 105 4
+ 384 00e8 0121     		movs	r1, #1
+ 385 00ea 0648     		ldr	r0, .L9+16
+ 386 00ec FFF7FEFF 		bl	TIM_Cmd
+ 106:Src/CodeSTM32.c **** }
+ 387              		.loc 1 106 1
+ 388 00f0 00BF     		nop
+ 389 00f2 80BD     		pop	{r7, pc}
+ 390              	.L10:
+ 391              		.align	2
+ 392              	.L9:
+ 393 00f4 00000000 		.word	GPIO_InitStruct
+ 394 00f8 000C0240 		.word	1073875968
+ 395 00fc 00080240 		.word	1073874944
+ 396 0100 00000000 		.word	TIM_TimeBaseInitStructre
+ 397 0104 00040040 		.word	1073742848
+ 398 0108 00000000 		.word	TimerIC_Confi
+ 399              		.cfi_endproc
+ 400              	.LFE135:
+ 402              		.section	.text.readEncoder,"ax",%progbits
+ 403              		.align	1
+ 404              		.global	readEncoder
+ 405              		.syntax unified
+ 406              		.thumb
+ 407              		.thumb_func
+ 409              	readEncoder:
+ 410              	.LFB136:
+ 107:Src/CodeSTM32.c **** 
+ 108:Src/CodeSTM32.c **** void readEncoder(void){
+ 411              		.loc 1 108 23
+ 412              		.cfi_startproc
+ 413              		@ args = 0, pretend = 0, frame = 0
+ 414              		@ frame_needed = 1, uses_anonymous_args = 0
+ 415 0000 80B5     		push	{r7, lr}
+ 416              	.LCFI6:
+ 417              		.cfi_def_cfa_offset 8
+ 418              		.cfi_offset 7, -8
+ 419              		.cfi_offset 14, -4
+ 420 0002 00AF     		add	r7, sp, #0
+ 421              	.LCFI7:
+ 422              		.cfi_def_cfa_register 7
+ 109:Src/CodeSTM32.c **** 	if (TIM_GetFlagStatus (TIM3, TIM_FLAG_CC1) == SET){
+ 423              		.loc 1 109 6
+ 424 0004 0221     		movs	r1, #2
+ 425 0006 4B48     		ldr	r0, .L21
+ 426 0008 FFF7FEFF 		bl	TIM_GetFlagStatus
+ 427 000c 0346     		mov	r3, r0
+ 428              		.loc 1 109 5
+ 429 000e 012B     		cmp	r3, #1
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 10
+
+
+ 430 0010 40F08D80 		bne	.L20
+ 110:Src/CodeSTM32.c **** 		TIM_ClearFlag(TIM3, TIM_FLAG_CC1);
+ 431              		.loc 1 110 3
+ 432 0014 0221     		movs	r1, #2
+ 433 0016 4748     		ldr	r0, .L21
+ 434 0018 FFF7FEFF 		bl	TIM_ClearFlag
+ 111:Src/CodeSTM32.c **** 		// SPEED //
+ 112:Src/CodeSTM32.c **** 		input_capture = TIM_GetCapture1(TIM3);	// channel_A 
+ 435              		.loc 1 112 19
+ 436 001c 4548     		ldr	r0, .L21
+ 437 001e FFF7FEFF 		bl	TIM_GetCapture1
+ 438 0022 07EE900A 		vmov	s15, r0	@ int
+ 439              		.loc 1 112 17
+ 440 0026 F8EE677A 		vcvt.f32.u32	s15, s15
+ 441 002a 434B     		ldr	r3, .L21+4
+ 442 002c C3ED007A 		vstr.32	s15, [r3]
+ 113:Src/CodeSTM32.c **** 		time = input_capture - pre_capture + captureOnthefly*10000;
+ 443              		.loc 1 113 24
+ 444 0030 414B     		ldr	r3, .L21+4
+ 445 0032 93ED007A 		vldr.32	s14, [r3]
+ 446 0036 414B     		ldr	r3, .L21+8
+ 447 0038 D3ED007A 		vldr.32	s15, [r3]
+ 448 003c 37EE677A 		vsub.f32	s14, s14, s15
+ 449              		.loc 1 113 55
+ 450 0040 3F4B     		ldr	r3, .L21+12
+ 451 0042 D3ED007A 		vldr.32	s15, [r3]
+ 452 0046 DFED3F6A 		vldr.32	s13, .L21+16
+ 453 004a 67EEA67A 		vmul.f32	s15, s15, s13
+ 454              		.loc 1 113 38
+ 455 004e 77EE277A 		vadd.f32	s15, s14, s15
+ 456              		.loc 1 113 8
+ 457 0052 3D4B     		ldr	r3, .L21+20
+ 458 0054 C3ED007A 		vstr.32	s15, [r3]
+ 114:Src/CodeSTM32.c **** 		captureOnthefly = 0;
+ 459              		.loc 1 114 19
+ 460 0058 394B     		ldr	r3, .L21+12
+ 461 005a 4FF00002 		mov	r2, #0
+ 462 005e 1A60     		str	r2, [r3]	@ float
+ 115:Src/CodeSTM32.c **** 		pre_capture = input_capture;
+ 463              		.loc 1 115 15
+ 464 0060 354B     		ldr	r3, .L21+4
+ 465 0062 1B68     		ldr	r3, [r3]	@ float
+ 466 0064 354A     		ldr	r2, .L21+8
+ 467 0066 1360     		str	r3, [r2]	@ float
+ 116:Src/CodeSTM32.c **** 		
+ 117:Src/CodeSTM32.c **** 		if(time != 0) 
+ 468              		.loc 1 117 11
+ 469 0068 374B     		ldr	r3, .L21+20
+ 470 006a D3ED007A 		vldr.32	s15, [r3]
+ 471              		.loc 1 117 5
+ 472 006e F5EE407A 		vcmp.f32	s15, #0
+ 473 0072 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 474 0076 0AD0     		beq	.L13
+ 118:Src/CodeSTM32.c **** 			pulse_perSecond = 10000/time ;						// 1 pulse = time
+ 475              		.loc 1 118 27
+ 476 0078 334B     		ldr	r3, .L21+20
+ 477 007a 93ED007A 		vldr.32	s14, [r3]
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 11
+
+
+ 478 007e DFED316A 		vldr.32	s13, .L21+16
+ 479 0082 C6EE877A 		vdiv.f32	s15, s13, s14
+ 480              		.loc 1 118 20
+ 481 0086 314B     		ldr	r3, .L21+24
+ 482 0088 C3ED007A 		vstr.32	s15, [r3]
+ 483 008c 11E0     		b	.L14
+ 484              	.L13:
+ 119:Src/CodeSTM32.c **** 																// ? pulse = 10000 (second)												
+ 120:Src/CodeSTM32.c **** 		else
+ 121:Src/CodeSTM32.c **** 		{
+ 122:Src/CodeSTM32.c **** 			pulse_perSecond = 0;
+ 485              		.loc 1 122 20
+ 486 008e 2F4B     		ldr	r3, .L21+24
+ 487 0090 4FF00002 		mov	r2, #0
+ 488 0094 1A60     		str	r2, [r3]	@ float
+ 123:Src/CodeSTM32.c **** 			speed = pulse_perSecond*60/1000;					// rpm = pulse_perSecond / encoder resolution
+ 489              		.loc 1 123 27
+ 490 0096 2D4B     		ldr	r3, .L21+24
+ 491 0098 D3ED007A 		vldr.32	s15, [r3]
+ 492 009c 9FED2C7A 		vldr.32	s14, .L21+28
+ 493 00a0 27EE877A 		vmul.f32	s14, s15, s14
+ 494              		.loc 1 123 30
+ 495 00a4 DFED2B6A 		vldr.32	s13, .L21+32
+ 496 00a8 C7EE267A 		vdiv.f32	s15, s14, s13
+ 497              		.loc 1 123 10
+ 498 00ac 2A4B     		ldr	r3, .L21+36
+ 499 00ae C3ED007A 		vstr.32	s15, [r3]
+ 500              	.L14:
+ 124:Src/CodeSTM32.c **** 		
+ 125:Src/CodeSTM32.c **** 		}
+ 126:Src/CodeSTM32.c **** 		//  Rounding  //
+ 127:Src/CodeSTM32.c **** 		if ( (speed - (int)speed ) >= (double)0.5)
+ 501              		.loc 1 127 15
+ 502 00b2 294B     		ldr	r3, .L21+36
+ 503 00b4 93ED007A 		vldr.32	s14, [r3]
+ 504              		.loc 1 127 17
+ 505 00b8 274B     		ldr	r3, .L21+36
+ 506 00ba D3ED007A 		vldr.32	s15, [r3]
+ 507 00be FDEEE77A 		vcvt.s32.f32	s15, s15
+ 508              		.loc 1 127 15
+ 509 00c2 F8EEE77A 		vcvt.f32.s32	s15, s15
+ 510 00c6 77EE677A 		vsub.f32	s15, s14, s15
+ 511              		.loc 1 127 6
+ 512 00ca B6EE007A 		vmov.f32	s14, #5.0e-1
+ 513 00ce F4EEC77A 		vcmpe.f32	s15, s14
+ 514 00d2 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 515 00d6 0FDB     		blt	.L19
+ 128:Src/CodeSTM32.c **** 				speed = (int)speed + 1;
+ 516              		.loc 1 128 13
+ 517 00d8 1F4B     		ldr	r3, .L21+36
+ 518 00da D3ED007A 		vldr.32	s15, [r3]
+ 519 00de FDEEE77A 		vcvt.s32.f32	s15, s15
+ 520 00e2 17EE903A 		vmov	r3, s15	@ int
+ 521              		.loc 1 128 24
+ 522 00e6 0133     		adds	r3, r3, #1
+ 523              		.loc 1 128 11
+ 524 00e8 07EE903A 		vmov	s15, r3	@ int
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 12
+
+
+ 525 00ec F8EEE77A 		vcvt.f32.s32	s15, s15
+ 526 00f0 194B     		ldr	r3, .L21+36
+ 527 00f2 C3ED007A 		vstr.32	s15, [r3]
+ 528 00f6 09E0     		b	.L17
+ 529              	.L19:
+ 129:Src/CodeSTM32.c **** 		
+ 130:Src/CodeSTM32.c **** 		else	
+ 131:Src/CodeSTM32.c **** 				speed = (int)speed ;
+ 530              		.loc 1 131 13
+ 531 00f8 174B     		ldr	r3, .L21+36
+ 532 00fa D3ED007A 		vldr.32	s15, [r3]
+ 533 00fe FDEEE77A 		vcvt.s32.f32	s15, s15
+ 534              		.loc 1 131 11
+ 535 0102 F8EEE77A 		vcvt.f32.s32	s15, s15
+ 536 0106 144B     		ldr	r3, .L21+36
+ 537 0108 C3ED007A 		vstr.32	s15, [r3]
+ 538              	.L17:
+ 132:Src/CodeSTM32.c **** 		
+ 133:Src/CodeSTM32.c **** 		if (TIM_GetFlagStatus(TIM3, TIM_FLAG_Update) != SET)
+ 539              		.loc 1 133 7
+ 540 010c 0121     		movs	r1, #1
+ 541 010e 0948     		ldr	r0, .L21
+ 542 0110 FFF7FEFF 		bl	TIM_GetFlagStatus
+ 543 0114 0346     		mov	r3, r0
+ 544              		.loc 1 133 6
+ 545 0116 012B     		cmp	r3, #1
+ 546 0118 09D0     		beq	.L20
+ 134:Src/CodeSTM32.c **** 			captureOnthefly ++;	
+ 547              		.loc 1 134 20
+ 548 011a 094B     		ldr	r3, .L21+12
+ 549 011c D3ED007A 		vldr.32	s15, [r3]
+ 550 0120 B7EE007A 		vmov.f32	s14, #1.0e+0
+ 551 0124 77EE877A 		vadd.f32	s15, s15, s14
+ 552 0128 054B     		ldr	r3, .L21+12
+ 553 012a C3ED007A 		vstr.32	s15, [r3]
+ 554              	.L20:
+ 135:Src/CodeSTM32.c **** 	}				
+ 136:Src/CodeSTM32.c **** }
+ 555              		.loc 1 136 1
+ 556 012e 00BF     		nop
+ 557 0130 80BD     		pop	{r7, pc}
+ 558              	.L22:
+ 559 0132 00BF     		.align	2
+ 560              	.L21:
+ 561 0134 00040040 		.word	1073742848
+ 562 0138 00000000 		.word	input_capture
+ 563 013c 00000000 		.word	pre_capture
+ 564 0140 00000000 		.word	captureOnthefly
+ 565 0144 00401C46 		.word	1176256512
+ 566 0148 00000000 		.word	time
+ 567 014c 00000000 		.word	pulse_perSecond
+ 568 0150 00007042 		.word	1114636288
+ 569 0154 00007A44 		.word	1148846080
+ 570 0158 00000000 		.word	speed
+ 571              		.cfi_endproc
+ 572              	.LFE136:
+ 574              		.section	.text.USART_Config,"ax",%progbits
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 13
+
+
+ 575              		.align	1
+ 576              		.global	USART_Config
+ 577              		.syntax unified
+ 578              		.thumb
+ 579              		.thumb_func
+ 581              	USART_Config:
+ 582              	.LFB137:
+ 137:Src/CodeSTM32.c **** 	
+ 138:Src/CodeSTM32.c **** void USART_Config(void){
+ 583              		.loc 1 138 24
+ 584              		.cfi_startproc
+ 585              		@ args = 0, pretend = 0, frame = 0
+ 586              		@ frame_needed = 1, uses_anonymous_args = 0
+ 587 0000 80B5     		push	{r7, lr}
+ 588              	.LCFI8:
+ 589              		.cfi_def_cfa_offset 8
+ 590              		.cfi_offset 7, -8
+ 591              		.cfi_offset 14, -4
+ 592 0002 00AF     		add	r7, sp, #0
+ 593              	.LCFI9:
+ 594              		.cfi_def_cfa_register 7
+ 139:Src/CodeSTM32.c ****   	RCC_APB2PeriphClockCmd (RCC_APB2Periph_USART1, ENABLE);
+ 595              		.loc 1 139 4
+ 596 0004 0121     		movs	r1, #1
+ 597 0006 1020     		movs	r0, #16
+ 598 0008 FFF7FEFF 		bl	RCC_APB2PeriphClockCmd
+ 140:Src/CodeSTM32.c ****   	RCC_AHB1PeriphClockCmd (RCC_AHB1Periph_GPIOB , ENABLE);
+ 599              		.loc 1 140 4
+ 600 000c 0121     		movs	r1, #1
+ 601 000e 0220     		movs	r0, #2
+ 602 0010 FFF7FEFF 		bl	RCC_AHB1PeriphClockCmd
+ 141:Src/CodeSTM32.c ****   	RCC_AHB1PeriphClockCmd (RCC_AHB1Periph_DMA2  , ENABLE);
+ 603              		.loc 1 141 4
+ 604 0014 0121     		movs	r1, #1
+ 605 0016 4FF48000 		mov	r0, #4194304
+ 606 001a FFF7FEFF 		bl	RCC_AHB1PeriphClockCmd
+ 142:Src/CodeSTM32.c **** 
+ 143:Src/CodeSTM32.c ****   	// GPIO Configuration
+ 144:Src/CodeSTM32.c ****   	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF;
+ 607              		.loc 1 144 30
+ 608 001e 644B     		ldr	r3, .L24
+ 609 0020 0222     		movs	r2, #2
+ 610 0022 1A71     		strb	r2, [r3, #4]
+ 145:Src/CodeSTM32.c ****   	GPIO_InitStruct.GPIO_OType = GPIO_OType_PP ;
+ 611              		.loc 1 145 31
+ 612 0024 624B     		ldr	r3, .L24
+ 613 0026 0022     		movs	r2, #0
+ 614 0028 9A71     		strb	r2, [r3, #6]
+ 146:Src/CodeSTM32.c ****   	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL ;
+ 615              		.loc 1 146 30
+ 616 002a 614B     		ldr	r3, .L24
+ 617 002c 0022     		movs	r2, #0
+ 618 002e DA71     		strb	r2, [r3, #7]
+ 147:Src/CodeSTM32.c ****   	GPIO_InitStruct.GPIO_Speed = GPIO_High_Speed ;
+ 619              		.loc 1 147 31
+ 620 0030 5F4B     		ldr	r3, .L24
+ 621 0032 0322     		movs	r2, #3
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 14
+
+
+ 622 0034 5A71     		strb	r2, [r3, #5]
+ 148:Src/CodeSTM32.c ****   	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
+ 623              		.loc 1 148 29
+ 624 0036 5E4B     		ldr	r3, .L24
+ 625 0038 C022     		movs	r2, #192
+ 626 003a 1A60     		str	r2, [r3]
+ 149:Src/CodeSTM32.c **** 
+ 150:Src/CodeSTM32.c ****   	GPIO_Init(GPIOB, &GPIO_InitStruct);
+ 627              		.loc 1 150 4
+ 628 003c 5C49     		ldr	r1, .L24
+ 629 003e 5D48     		ldr	r0, .L24+4
+ 630 0040 FFF7FEFF 		bl	GPIO_Init
+ 151:Src/CodeSTM32.c **** 
+ 152:Src/CodeSTM32.c ****   	GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_USART1);
+ 631              		.loc 1 152 4
+ 632 0044 0722     		movs	r2, #7
+ 633 0046 0621     		movs	r1, #6
+ 634 0048 5A48     		ldr	r0, .L24+4
+ 635 004a FFF7FEFF 		bl	GPIO_PinAFConfig
+ 153:Src/CodeSTM32.c ****   	GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_USART1);
+ 636              		.loc 1 153 4
+ 637 004e 0722     		movs	r2, #7
+ 638 0050 0721     		movs	r1, #7
+ 639 0052 5848     		ldr	r0, .L24+4
+ 640 0054 FFF7FEFF 		bl	GPIO_PinAFConfig
+ 154:Src/CodeSTM32.c **** 
+ 155:Src/CodeSTM32.c ****   	USART_InitStructure.USART_BaudRate = 9600;
+ 641              		.loc 1 155 39
+ 642 0058 574B     		ldr	r3, .L24+8
+ 643 005a 4FF41652 		mov	r2, #9600
+ 644 005e 1A60     		str	r2, [r3]
+ 156:Src/CodeSTM32.c ****   	USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None ;
+ 645              		.loc 1 156 50
+ 646 0060 554B     		ldr	r3, .L24+8
+ 647 0062 0022     		movs	r2, #0
+ 648 0064 9A81     		strh	r2, [r3, #12]	@ movhi
+ 157:Src/CodeSTM32.c ****   	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx ;
+ 649              		.loc 1 157 35
+ 650 0066 544B     		ldr	r3, .L24+8
+ 651 0068 0C22     		movs	r2, #12
+ 652 006a 5A81     		strh	r2, [r3, #10]	@ movhi
+ 158:Src/CodeSTM32.c ****   	USART_InitStructure.USART_Parity = USART_Parity_No;
+ 653              		.loc 1 158 37
+ 654 006c 524B     		ldr	r3, .L24+8
+ 655 006e 0022     		movs	r2, #0
+ 656 0070 1A81     		strh	r2, [r3, #8]	@ movhi
+ 159:Src/CodeSTM32.c ****   	USART_InitStructure.USART_StopBits = USART_StopBits_1;
+ 657              		.loc 1 159 39
+ 658 0072 514B     		ldr	r3, .L24+8
+ 659 0074 0022     		movs	r2, #0
+ 660 0076 DA80     		strh	r2, [r3, #6]	@ movhi
+ 160:Src/CodeSTM32.c ****   	USART_InitStructure.USART_WordLength = USART_WordLength_8b ;
+ 661              		.loc 1 160 41
+ 662 0078 4F4B     		ldr	r3, .L24+8
+ 663 007a 0022     		movs	r2, #0
+ 664 007c 9A80     		strh	r2, [r3, #4]	@ movhi
+ 161:Src/CodeSTM32.c **** 
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 15
+
+
+ 162:Src/CodeSTM32.c ****   	USART_Init(USART1, &USART_InitStructure);
+ 665              		.loc 1 162 4
+ 666 007e 4E49     		ldr	r1, .L24+8
+ 667 0080 4E48     		ldr	r0, .L24+12
+ 668 0082 FFF7FEFF 		bl	USART_Init
+ 163:Src/CodeSTM32.c ****   	USART_Cmd(USART1, ENABLE);
+ 669              		.loc 1 163 4
+ 670 0086 0121     		movs	r1, #1
+ 671 0088 4C48     		ldr	r0, .L24+12
+ 672 008a FFF7FEFF 		bl	USART_Cmd
+ 164:Src/CodeSTM32.c **** 
+ 165:Src/CodeSTM32.c ****   	// Enable USART1 DMA
+ 166:Src/CodeSTM32.c ****   	USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);
+ 673              		.loc 1 166 4
+ 674 008e 0122     		movs	r2, #1
+ 675 0090 8021     		movs	r1, #128
+ 676 0092 4A48     		ldr	r0, .L24+12
+ 677 0094 FFF7FEFF 		bl	USART_DMACmd
+ 167:Src/CodeSTM32.c ****   	USART_DMACmd(USART1, USART_DMAReq_Rx, ENABLE);
+ 678              		.loc 1 167 4
+ 679 0098 0122     		movs	r2, #1
+ 680 009a 4021     		movs	r1, #64
+ 681 009c 4748     		ldr	r0, .L24+12
+ 682 009e FFF7FEFF 		bl	USART_DMACmd
+ 168:Src/CodeSTM32.c **** 
+ 169:Src/CodeSTM32.c ****   	// DMA2 Stream2 Channel4 for USART1 Rx configuration
+ 170:Src/CodeSTM32.c ****   	DMA_InitStructure.DMA_BufferSize = BUFFER_SIZE_RX;			
+ 683              		.loc 1 170 37
+ 684 00a2 474B     		ldr	r3, .L24+16
+ 685 00a4 0122     		movs	r2, #1
+ 686 00a6 1A61     		str	r2, [r3, #16]
+ 171:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_Channel = DMA_Channel_4;
+ 687              		.loc 1 171 32
+ 688 00a8 454B     		ldr	r3, .L24+16
+ 689 00aa 4FF00062 		mov	r2, #134217728
+ 690 00ae 1A60     		str	r2, [r3]
+ 172:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;
+ 691              		.loc 1 172 28
+ 692 00b0 434B     		ldr	r3, .L24+16
+ 693 00b2 0022     		movs	r2, #0
+ 694 00b4 DA60     		str	r2, [r3, #12]
+ 173:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable;
+ 695              		.loc 1 173 33
+ 696 00b6 424B     		ldr	r3, .L24+16
+ 697 00b8 0022     		movs	r2, #0
+ 698 00ba DA62     		str	r2, [r3, #44]
+ 174:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_HalfFull;
+ 699              		.loc 1 174 38
+ 700 00bc 404B     		ldr	r3, .L24+16
+ 701 00be 0122     		movs	r2, #1
+ 702 00c0 1A63     		str	r2, [r3, #48]
+ 175:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)rxbuff	;		
+ 703              		.loc 1 175 42
+ 704 00c2 404A     		ldr	r2, .L24+20
+ 705              		.loc 1 175 40
+ 706 00c4 3E4B     		ldr	r3, .L24+16
+ 707 00c6 9A60     		str	r2, [r3, #8]
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 16
+
+
+ 176:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_MemoryBurst =DMA_MemoryBurst_Single;
+ 708              		.loc 1 176 36
+ 709 00c8 3D4B     		ldr	r3, .L24+16
+ 710 00ca 0022     		movs	r2, #0
+ 711 00cc 5A63     		str	r2, [r3, #52]
+ 177:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_MemoryDataSize = 	DMA_MemoryDataSize_Byte	;			
+ 712              		.loc 1 177 39
+ 713 00ce 3C4B     		ldr	r3, .L24+16
+ 714 00d0 0022     		movs	r2, #0
+ 715 00d2 1A62     		str	r2, [r3, #32]
+ 178:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable			;					
+ 716              		.loc 1 178 34
+ 717 00d4 3A4B     		ldr	r3, .L24+16
+ 718 00d6 4FF48062 		mov	r2, #1024
+ 719 00da 9A61     		str	r2, [r3, #24]
+ 179:Src/CodeSTM32.c **** 	//MemoryInc: specifies whether memory address be incremented or not
+ 180:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_Mode = DMA_Mode_Normal 	;		
+ 720              		.loc 1 180 29
+ 721 00dc 384B     		ldr	r3, .L24+16
+ 722 00de 0022     		movs	r2, #0
+ 723 00e0 5A62     		str	r2, [r3, #36]
+ 181:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_PeripheralBaseAddr =(uint32_t)&USART1->DR	; 
+ 724              		.loc 1 181 43
+ 725 00e2 374B     		ldr	r3, .L24+16
+ 726 00e4 384A     		ldr	r2, .L24+24
+ 727 00e6 5A60     		str	r2, [r3, #4]
+ 182:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+ 728              		.loc 1 182 43
+ 729 00e8 354B     		ldr	r3, .L24+16
+ 730 00ea 0022     		movs	r2, #0
+ 731 00ec DA61     		str	r2, [r3, #28]
+ 183:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+ 732              		.loc 1 183 38
+ 733 00ee 344B     		ldr	r3, .L24+16
+ 734 00f0 0022     		movs	r2, #0
+ 735 00f2 5A61     		str	r2, [r3, #20]
+ 184:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_Priority = DMA_Priority_High;
+ 736              		.loc 1 184 33
+ 737 00f4 324B     		ldr	r3, .L24+16
+ 738 00f6 4FF40032 		mov	r2, #131072
+ 739 00fa 9A62     		str	r2, [r3, #40]
+ 185:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_PeripheralBurst= DMA_PeripheralBurst_Single;
+ 740              		.loc 1 185 39
+ 741 00fc 304B     		ldr	r3, .L24+16
+ 742 00fe 0022     		movs	r2, #0
+ 743 0100 9A63     		str	r2, [r3, #56]
+ 186:Src/CodeSTM32.c **** 	
+ 187:Src/CodeSTM32.c **** 	DMA_Init (DMA2_Stream2,&DMA_InitStructure );
+ 744              		.loc 1 187 2
+ 745 0102 2F49     		ldr	r1, .L24+16
+ 746 0104 3148     		ldr	r0, .L24+28
+ 747 0106 FFF7FEFF 		bl	DMA_Init
+ 188:Src/CodeSTM32.c **** 	DMA_Cmd (DMA2_Stream2, ENABLE);
+ 748              		.loc 1 188 2
+ 749 010a 0121     		movs	r1, #1
+ 750 010c 2F48     		ldr	r0, .L24+28
+ 751 010e FFF7FEFF 		bl	DMA_Cmd
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 17
+
+
+ 189:Src/CodeSTM32.c **** 	
+ 190:Src/CodeSTM32.c **** 	//Cau hinh DMA cho TX
+ 191:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_BufferSize = BUFFER_SIZE_TX;			//TX_Buffer_size
+ 752              		.loc 1 191 35
+ 753 0112 2B4B     		ldr	r3, .L24+16
+ 754 0114 0122     		movs	r2, #1
+ 755 0116 1A61     		str	r2, [r3, #16]
+ 192:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_Channel = DMA_Channel_4;
+ 756              		.loc 1 192 32
+ 757 0118 294B     		ldr	r3, .L24+16
+ 758 011a 4FF00062 		mov	r2, #134217728
+ 759 011e 1A60     		str	r2, [r3]
+ 193:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
+ 760              		.loc 1 193 28
+ 761 0120 274B     		ldr	r3, .L24+16
+ 762 0122 4022     		movs	r2, #64
+ 763 0124 DA60     		str	r2, [r3, #12]
+ 194:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable;
+ 764              		.loc 1 194 33
+ 765 0126 264B     		ldr	r3, .L24+16
+ 766 0128 0022     		movs	r2, #0
+ 767 012a DA62     		str	r2, [r3, #44]
+ 195:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_HalfFull;
+ 768              		.loc 1 195 38
+ 769 012c 244B     		ldr	r3, .L24+16
+ 770 012e 0122     		movs	r2, #1
+ 771 0130 1A63     		str	r2, [r3, #48]
+ 196:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)txbuff;		
+ 772              		.loc 1 196 42
+ 773 0132 274A     		ldr	r2, .L24+32
+ 774              		.loc 1 196 40
+ 775 0134 224B     		ldr	r3, .L24+16
+ 776 0136 9A60     		str	r2, [r3, #8]
+ 197:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_MemoryBurst =DMA_MemoryBurst_Single;
+ 777              		.loc 1 197 36
+ 778 0138 214B     		ldr	r3, .L24+16
+ 779 013a 0022     		movs	r2, #0
+ 780 013c 5A63     		str	r2, [r3, #52]
+ 198:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_MemoryDataSize = 	DMA_MemoryDataSize_Byte;			
+ 781              		.loc 1 198 39
+ 782 013e 204B     		ldr	r3, .L24+16
+ 783 0140 0022     		movs	r2, #0
+ 784 0142 1A62     		str	r2, [r3, #32]
+ 199:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+ 785              		.loc 1 199 34
+ 786 0144 1E4B     		ldr	r3, .L24+16
+ 787 0146 4FF48062 		mov	r2, #1024
+ 788 014a 9A61     		str	r2, [r3, #24]
+ 200:Src/CodeSTM32.c **** 	//MemoryInc: specifies whether memory address be incremented or not
+ 201:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_Mode = DMA_Mode_Normal 	;	
+ 789              		.loc 1 201 29
+ 790 014c 1C4B     		ldr	r3, .L24+16
+ 791 014e 0022     		movs	r2, #0
+ 792 0150 5A62     		str	r2, [r3, #36]
+ 202:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_PeripheralBaseAddr =(uint32_t)&USART1->DR	; 
+ 793              		.loc 1 202 43
+ 794 0152 1B4B     		ldr	r3, .L24+16
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 18
+
+
+ 795 0154 1C4A     		ldr	r2, .L24+24
+ 796 0156 5A60     		str	r2, [r3, #4]
+ 203:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+ 797              		.loc 1 203 43
+ 798 0158 194B     		ldr	r3, .L24+16
+ 799 015a 0022     		movs	r2, #0
+ 800 015c DA61     		str	r2, [r3, #28]
+ 204:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;	
+ 801              		.loc 1 204 38
+ 802 015e 184B     		ldr	r3, .L24+16
+ 803 0160 0022     		movs	r2, #0
+ 804 0162 5A61     		str	r2, [r3, #20]
+ 205:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_Priority = DMA_Priority_High;	
+ 805              		.loc 1 205 33
+ 806 0164 164B     		ldr	r3, .L24+16
+ 807 0166 4FF40032 		mov	r2, #131072
+ 808 016a 9A62     		str	r2, [r3, #40]
+ 206:Src/CodeSTM32.c **** 	DMA_InitStructure.DMA_PeripheralBurst= DMA_PeripheralBurst_Single;
+ 809              		.loc 1 206 39
+ 810 016c 144B     		ldr	r3, .L24+16
+ 811 016e 0022     		movs	r2, #0
+ 812 0170 9A63     		str	r2, [r3, #56]
+ 207:Src/CodeSTM32.c **** 	
+ 208:Src/CodeSTM32.c **** 	DMA_Init(DMA2_Stream7,&DMA_InitStructure );
+ 813              		.loc 1 208 2
+ 814 0172 1349     		ldr	r1, .L24+16
+ 815 0174 1748     		ldr	r0, .L24+36
+ 816 0176 FFF7FEFF 		bl	DMA_Init
+ 209:Src/CodeSTM32.c **** 	DMA_Cmd(DMA2_Stream7, ENABLE);
+ 817              		.loc 1 209 2
+ 818 017a 0121     		movs	r1, #1
+ 819 017c 1548     		ldr	r0, .L24+36
+ 820 017e FFF7FEFF 		bl	DMA_Cmd
+ 210:Src/CodeSTM32.c **** 		
+ 211:Src/CodeSTM32.c **** 		// Enable DMA Interrupt to the highest priority
+ 212:Src/CodeSTM32.c ****   	NVIC_InitStructure.NVIC_IRQChannel = DMA2_Stream2_IRQn;
+ 821              		.loc 1 212 39
+ 822 0182 154B     		ldr	r3, .L24+40
+ 823 0184 3A22     		movs	r2, #58
+ 824 0186 1A70     		strb	r2, [r3]
+ 213:Src/CodeSTM32.c ****   	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+ 825              		.loc 1 213 57
+ 826 0188 134B     		ldr	r3, .L24+40
+ 827 018a 0022     		movs	r2, #0
+ 828 018c 5A70     		strb	r2, [r3, #1]
+ 214:Src/CodeSTM32.c ****   	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+ 829              		.loc 1 214 50
+ 830 018e 124B     		ldr	r3, .L24+40
+ 831 0190 0022     		movs	r2, #0
+ 832 0192 9A70     		strb	r2, [r3, #2]
+ 215:Src/CodeSTM32.c ****   	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+ 833              		.loc 1 215 42
+ 834 0194 104B     		ldr	r3, .L24+40
+ 835 0196 0122     		movs	r2, #1
+ 836 0198 DA70     		strb	r2, [r3, #3]
+ 216:Src/CodeSTM32.c ****   	NVIC_Init(&NVIC_InitStructure);
+ 837              		.loc 1 216 4
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 19
+
+
+ 838 019a 0F48     		ldr	r0, .L24+40
+ 839 019c FFF7FEFF 		bl	NVIC_Init
+ 217:Src/CodeSTM32.c ****   	// Transfer complete interrupt mask
+ 218:Src/CodeSTM32.c ****   	DMA_ITConfig(DMA2_Stream2, DMA_IT_TC, ENABLE);
+ 840              		.loc 1 218 4
+ 841 01a0 0122     		movs	r2, #1
+ 842 01a2 1021     		movs	r1, #16
+ 843 01a4 0948     		ldr	r0, .L24+28
+ 844 01a6 FFF7FEFF 		bl	DMA_ITConfig
+ 219:Src/CodeSTM32.c **** }
+ 845              		.loc 1 219 1
+ 846 01aa 00BF     		nop
+ 847 01ac 80BD     		pop	{r7, pc}
+ 848              	.L25:
+ 849 01ae 00BF     		.align	2
+ 850              	.L24:
+ 851 01b0 00000000 		.word	GPIO_InitStruct
+ 852 01b4 00040240 		.word	1073873920
+ 853 01b8 00000000 		.word	USART_InitStructure
+ 854 01bc 00100140 		.word	1073811456
+ 855 01c0 00000000 		.word	DMA_InitStructure
+ 856 01c4 00000000 		.word	rxbuff
+ 857 01c8 04100140 		.word	1073811460
+ 858 01cc 40640240 		.word	1073898560
+ 859 01d0 00000000 		.word	txbuff
+ 860 01d4 B8640240 		.word	1073898680
+ 861 01d8 00000000 		.word	NVIC_InitStructure
+ 862              		.cfi_endproc
+ 863              	.LFE137:
+ 865              		.section	.text.PCTransmission,"ax",%progbits
+ 866              		.align	1
+ 867              		.global	PCTransmission
+ 868              		.syntax unified
+ 869              		.thumb
+ 870              		.thumb_func
+ 872              	PCTransmission:
+ 873              	.LFB138:
+ 220:Src/CodeSTM32.c **** 
+ 221:Src/CodeSTM32.c **** void PCTransmission(void){
+ 874              		.loc 1 221 26
+ 875              		.cfi_startproc
+ 876              		@ args = 0, pretend = 0, frame = 8
+ 877              		@ frame_needed = 1, uses_anonymous_args = 0
+ 878 0000 80B5     		push	{r7, lr}
+ 879              	.LCFI10:
+ 880              		.cfi_def_cfa_offset 8
+ 881              		.cfi_offset 7, -8
+ 882              		.cfi_offset 14, -4
+ 883 0002 82B0     		sub	sp, sp, #8
+ 884              	.LCFI11:
+ 885              		.cfi_def_cfa_offset 16
+ 886 0004 00AF     		add	r7, sp, #0
+ 887              	.LCFI12:
+ 888              		.cfi_def_cfa_register 7
+ 222:Src/CodeSTM32.c **** 	if(TIM6-> CNT >= 100){
+ 889              		.loc 1 222 9
+ 890 0006 154B     		ldr	r3, .L29
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 20
+
+
+ 891 0008 5B6A     		ldr	r3, [r3, #36]
+ 892              		.loc 1 222 4
+ 893 000a 632B     		cmp	r3, #99
+ 894 000c 21D9     		bls	.L28
+ 223:Src/CodeSTM32.c **** 		GPIO_ToggleBits(GPIOD, GPIO_Pin_12|GPIO_Pin_13|GPIO_Pin_14|GPIO_Pin_15);
+ 895              		.loc 1 223 3
+ 896 000e 4FF47041 		mov	r1, #61440
+ 897 0012 1348     		ldr	r0, .L29+4
+ 898 0014 FFF7FEFF 		bl	GPIO_ToggleBits
+ 224:Src/CodeSTM32.c **** 			
+ 225:Src/CodeSTM32.c **** 		speed = 21;
+ 899              		.loc 1 225 9
+ 900 0018 124B     		ldr	r3, .L29+8
+ 901 001a 134A     		ldr	r2, .L29+12
+ 902 001c 1A60     		str	r2, [r3]	@ float
+ 226:Src/CodeSTM32.c **** 		
+ 227:Src/CodeSTM32.c **** 		txbuff[0]= speed;
+ 903              		.loc 1 227 12
+ 904 001e 114B     		ldr	r3, .L29+8
+ 905 0020 D3ED007A 		vldr.32	s15, [r3]
+ 906 0024 FCEEE77A 		vcvt.u32.f32	s15, s15
+ 907 0028 C7ED017A 		vstr.32	s15, [r7, #4]	@ int
+ 908 002c 3B79     		ldrb	r3, [r7, #4]
+ 909 002e DAB2     		uxtb	r2, r3
+ 910 0030 0E4B     		ldr	r3, .L29+16
+ 911 0032 1A70     		strb	r2, [r3]
+ 228:Src/CodeSTM32.c **** 		
+ 229:Src/CodeSTM32.c **** 		
+ 230:Src/CodeSTM32.c **** 		DMA_ClearFlag(DMA2_Stream7, DMA_FLAG_TCIF7);
+ 912              		.loc 1 230 3
+ 913 0034 4FF02051 		mov	r1, #671088640
+ 914 0038 0D48     		ldr	r0, .L29+20
+ 915 003a FFF7FEFF 		bl	DMA_ClearFlag
+ 231:Src/CodeSTM32.c **** 		DMA2_Stream7->NDTR=13;
+ 916              		.loc 1 231 15
+ 917 003e 0C4B     		ldr	r3, .L29+20
+ 918              		.loc 1 231 21
+ 919 0040 0D22     		movs	r2, #13
+ 920 0042 5A60     		str	r2, [r3, #4]
+ 232:Src/CodeSTM32.c **** 		DMA_Cmd(DMA2_Stream7,ENABLE);
+ 921              		.loc 1 232 3
+ 922 0044 0121     		movs	r1, #1
+ 923 0046 0A48     		ldr	r0, .L29+20
+ 924 0048 FFF7FEFF 		bl	DMA_Cmd
+ 233:Src/CodeSTM32.c **** 		TIM6->CNT=0;
+ 925              		.loc 1 233 7
+ 926 004c 034B     		ldr	r3, .L29
+ 927              		.loc 1 233 12
+ 928 004e 0022     		movs	r2, #0
+ 929 0050 5A62     		str	r2, [r3, #36]
+ 930              	.L28:
+ 234:Src/CodeSTM32.c **** 	}
+ 235:Src/CodeSTM32.c **** }
+ 931              		.loc 1 235 1
+ 932 0052 00BF     		nop
+ 933 0054 0837     		adds	r7, r7, #8
+ 934              	.LCFI13:
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 21
+
+
+ 935              		.cfi_def_cfa_offset 8
+ 936 0056 BD46     		mov	sp, r7
+ 937              	.LCFI14:
+ 938              		.cfi_def_cfa_register 13
+ 939              		@ sp needed
+ 940 0058 80BD     		pop	{r7, pc}
+ 941              	.L30:
+ 942 005a 00BF     		.align	2
+ 943              	.L29:
+ 944 005c 00100040 		.word	1073745920
+ 945 0060 000C0240 		.word	1073875968
+ 946 0064 00000000 		.word	speed
+ 947 0068 0000A841 		.word	1101529088
+ 948 006c 00000000 		.word	txbuff
+ 949 0070 B8640240 		.word	1073898680
+ 950              		.cfi_endproc
+ 951              	.LFE138:
+ 953              		.section	.text.DMA2_Stream2_IRQHandler,"ax",%progbits
+ 954              		.align	1
+ 955              		.global	DMA2_Stream2_IRQHandler
+ 956              		.syntax unified
+ 957              		.thumb
+ 958              		.thumb_func
+ 960              	DMA2_Stream2_IRQHandler:
+ 961              	.LFB139:
+ 236:Src/CodeSTM32.c **** 
+ 237:Src/CodeSTM32.c **** void DMA2_Stream2_IRQHandler(void) {
+ 962              		.loc 1 237 36
+ 963              		.cfi_startproc
+ 964              		@ args = 0, pretend = 0, frame = 0
+ 965              		@ frame_needed = 1, uses_anonymous_args = 0
+ 966 0000 80B5     		push	{r7, lr}
+ 967              	.LCFI15:
+ 968              		.cfi_def_cfa_offset 8
+ 969              		.cfi_offset 7, -8
+ 970              		.cfi_offset 14, -4
+ 971 0002 00AF     		add	r7, sp, #0
+ 972              	.LCFI16:
+ 973              		.cfi_def_cfa_register 7
+ 238:Src/CodeSTM32.c ****   	// Clear the DMA2_Stream2 TCIF2 pending bit
+ 239:Src/CodeSTM32.c ****   	DMA_ClearITPendingBit(DMA2_Stream2, DMA_IT_TCIF2);
+ 974              		.loc 1 239 4
+ 975 0004 0C49     		ldr	r1, .L34
+ 976 0006 0D48     		ldr	r0, .L34+4
+ 977 0008 FFF7FEFF 		bl	DMA_ClearITPendingBit
+ 240:Src/CodeSTM32.c ****   	//No new input after finish these package
+ 241:Src/CodeSTM32.c ****   	DMA_Cmd(DMA2_Stream2, DISABLE);
+ 978              		.loc 1 241 4
+ 979 000c 0021     		movs	r1, #0
+ 980 000e 0B48     		ldr	r0, .L34+4
+ 981 0010 FFF7FEFF 		bl	DMA_Cmd
+ 242:Src/CodeSTM32.c **** 	
+ 243:Src/CodeSTM32.c **** 	if(rxbuff[0]=='S')
+ 982              		.loc 1 243 11
+ 983 0014 0A4B     		ldr	r3, .L34+8
+ 984 0016 93F90030 		ldrsb	r3, [r3]
+ 985              		.loc 1 243 4
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 22
+
+
+ 986 001a 532B     		cmp	r3, #83
+ 987 001c 03D1     		bne	.L32
+ 244:Src/CodeSTM32.c **** 		{
+ 245:Src/CodeSTM32.c **** 			run = 1;
+ 988              		.loc 1 245 8
+ 989 001e 094B     		ldr	r3, .L34+12
+ 990 0020 0122     		movs	r2, #1
+ 991 0022 1A60     		str	r2, [r3]
+ 992 0024 02E0     		b	.L33
+ 993              	.L32:
+ 246:Src/CodeSTM32.c **** 		}
+ 247:Src/CodeSTM32.c **** 	else run = 0;
+ 994              		.loc 1 247 11
+ 995 0026 074B     		ldr	r3, .L34+12
+ 996 0028 0022     		movs	r2, #0
+ 997 002a 1A60     		str	r2, [r3]
+ 998              	.L33:
+ 248:Src/CodeSTM32.c **** 	DMA_Cmd(DMA2_Stream2, ENABLE);
+ 999              		.loc 1 248 2
+ 1000 002c 0121     		movs	r1, #1
+ 1001 002e 0348     		ldr	r0, .L34+4
+ 1002 0030 FFF7FEFF 		bl	DMA_Cmd
+ 249:Src/CodeSTM32.c **** }
+ 1003              		.loc 1 249 1
+ 1004 0034 00BF     		nop
+ 1005 0036 80BD     		pop	{r7, pc}
+ 1006              	.L35:
+ 1007              		.align	2
+ 1008              	.L34:
+ 1009 0038 00802010 		.word	270565376
+ 1010 003c 40640240 		.word	1073898560
+ 1011 0040 00000000 		.word	rxbuff
+ 1012 0044 00000000 		.word	run
+ 1013              		.cfi_endproc
+ 1014              	.LFE139:
+ 1016              		.section	.text.delay,"ax",%progbits
+ 1017              		.align	1
+ 1018              		.global	delay
+ 1019              		.syntax unified
+ 1020              		.thumb
+ 1021              		.thumb_func
+ 1023              	delay:
+ 1024              	.LFB140:
+ 250:Src/CodeSTM32.c **** 
+ 251:Src/CodeSTM32.c **** void delay( __IO uint32_t nCount)
+ 252:Src/CodeSTM32.c **** {
+ 1025              		.loc 1 252 1
+ 1026              		.cfi_startproc
+ 1027              		@ args = 0, pretend = 0, frame = 8
+ 1028              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1029              		@ link register save eliminated.
+ 1030 0000 80B4     		push	{r7}
+ 1031              	.LCFI17:
+ 1032              		.cfi_def_cfa_offset 4
+ 1033              		.cfi_offset 7, -4
+ 1034 0002 83B0     		sub	sp, sp, #12
+ 1035              	.LCFI18:
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 23
+
+
+ 1036              		.cfi_def_cfa_offset 16
+ 1037 0004 00AF     		add	r7, sp, #0
+ 1038              	.LCFI19:
+ 1039              		.cfi_def_cfa_register 7
+ 1040 0006 7860     		str	r0, [r7, #4]
+ 253:Src/CodeSTM32.c **** while(nCount--)
+ 1041              		.loc 1 253 6
+ 1042 0008 00BF     		nop
+ 1043              	.L37:
+ 1044              		.loc 1 253 13 discriminator 1
+ 1045 000a 7B68     		ldr	r3, [r7, #4]
+ 1046 000c 5A1E     		subs	r2, r3, #1
+ 1047 000e 7A60     		str	r2, [r7, #4]
+ 1048              		.loc 1 253 6 discriminator 1
+ 1049 0010 002B     		cmp	r3, #0
+ 1050 0012 FAD1     		bne	.L37
+ 254:Src/CodeSTM32.c **** 	{
+ 255:Src/CodeSTM32.c **** 	}
+ 256:Src/CodeSTM32.c **** }
+ 1051              		.loc 1 256 1
+ 1052 0014 00BF     		nop
+ 1053 0016 00BF     		nop
+ 1054 0018 0C37     		adds	r7, r7, #12
+ 1055              	.LCFI20:
+ 1056              		.cfi_def_cfa_offset 4
+ 1057 001a BD46     		mov	sp, r7
+ 1058              	.LCFI21:
+ 1059              		.cfi_def_cfa_register 13
+ 1060              		@ sp needed
+ 1061 001c 5DF8047B 		ldr	r7, [sp], #4
+ 1062              	.LCFI22:
+ 1063              		.cfi_restore 7
+ 1064              		.cfi_def_cfa_offset 0
+ 1065 0020 7047     		bx	lr
+ 1066              		.cfi_endproc
+ 1067              	.LFE140:
+ 1069              		.text
+ 1070              	.Letext0:
+ 1071              		.file 2 "d:\\arm-none-eabi-gcc\\arm-none-eabi\\include\\machine\\_default_types.h"
+ 1072              		.file 3 "d:\\arm-none-eabi-gcc\\arm-none-eabi\\include\\sys\\_stdint.h"
+ 1073              		.file 4 "Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f4xx.h"
+ 1074              		.file 5 "Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_dma.h"
+ 1075              		.file 6 "Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_gpio.h"
+ 1076              		.file 7 "Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_tim.h"
+ 1077              		.file 8 "Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_usart.h"
+ 1078              		.file 9 "Drivers/STM32F4xx_StdPeriph_Driver/inc/misc.h"
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 24
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 CodeSTM32.c
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:24     .bss.rxbuff:00000000 rxbuff
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:21     .bss.rxbuff:00000000 $d
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:31     .bss.txbuff:00000000 txbuff
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:28     .bss.txbuff:00000000 $d
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:38     .bss.input_capture:00000000 input_capture
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:35     .bss.input_capture:00000000 $d
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:45     .bss.pre_capture:00000000 pre_capture
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:42     .bss.pre_capture:00000000 $d
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:52     .bss.captureOnthefly:00000000 captureOnthefly
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:49     .bss.captureOnthefly:00000000 $d
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:59     .bss.pulse_perSecond:00000000 pulse_perSecond
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:56     .bss.pulse_perSecond:00000000 $d
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:66     .bss.time:00000000 time
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:63     .bss.time:00000000 $d
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:73     .bss.speed:00000000 speed
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:70     .bss.speed:00000000 $d
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:80     .bss.run:00000000 run
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:77     .bss.run:00000000 $d
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:87     .bss.GPIO_InitStruct:00000000 GPIO_InitStruct
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:84     .bss.GPIO_InitStruct:00000000 $d
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:94     .bss.NVIC_InitStructure:00000000 NVIC_InitStructure
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:91     .bss.NVIC_InitStructure:00000000 $d
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:101    .bss.TIM_TimeBaseInitStructre:00000000 TIM_TimeBaseInitStructre
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:98     .bss.TIM_TimeBaseInitStructre:00000000 $d
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:108    .bss.TimerIC_Confi:00000000 TimerIC_Confi
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:105    .bss.TimerIC_Confi:00000000 $d
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:115    .bss.USART_InitStructure:00000000 USART_InitStructure
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:112    .bss.USART_InitStructure:00000000 $d
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:122    .bss.DMA_InitStructure:00000000 DMA_InitStructure
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:119    .bss.DMA_InitStructure:00000000 $d
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:125    .text.main:00000000 $t
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:131    .text.main:00000000 main
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:235    .text.TimerCaptureConf:00000000 TimerCaptureConf
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:581    .text.USART_Config:00000000 USART_Config
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:174    .text.TIMCounterConfig:00000000 TIMCounterConfig
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:163    .text.main:00000020 $d
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:168    .text.TIMCounterConfig:00000000 $t
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:223    .text.TIMCounterConfig:0000003c $d
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:229    .text.TimerCaptureConf:00000000 $t
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:393    .text.TimerCaptureConf:000000f4 $d
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:403    .text.readEncoder:00000000 $t
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:409    .text.readEncoder:00000000 readEncoder
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:561    .text.readEncoder:00000134 $d
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:575    .text.USART_Config:00000000 $t
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:851    .text.USART_Config:000001b0 $d
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:866    .text.PCTransmission:00000000 $t
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:872    .text.PCTransmission:00000000 PCTransmission
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:944    .text.PCTransmission:0000005c $d
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:954    .text.DMA2_Stream2_IRQHandler:00000000 $t
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:960    .text.DMA2_Stream2_IRQHandler:00000000 DMA2_Stream2_IRQHandler
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:1009   .text.DMA2_Stream2_IRQHandler:00000038 $d
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:1017   .text.delay:00000000 $t
+C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s:1023   .text.delay:00000000 delay
+
+UNDEFINED SYMBOLS
+ARM GAS  C:\Users\ASUS\AppData\Local\Temp\ccjvhfMe.s 			page 25
+
+
+SystemInit
+GPIO_SetBits
+RCC_APB1PeriphClockCmd
+TIM_TimeBaseInit
+TIM_Cmd
+RCC_AHB1PeriphClockCmd
+GPIO_Init
+GPIO_PinAFConfig
+TIM_ITConfig
+TIM_ICInit
+TIM_GetFlagStatus
+TIM_ClearFlag
+TIM_GetCapture1
+RCC_APB2PeriphClockCmd
+USART_Init
+USART_Cmd
+USART_DMACmd
+DMA_Init
+DMA_Cmd
+NVIC_Init
+DMA_ITConfig
+GPIO_ToggleBits
+DMA_ClearFlag
+DMA_ClearITPendingBit
